@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Upload to S3</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+    <style>
+        body {
+            background-color: #f8f9fa;
+        }
+        .upload-area {
+            border: 2px dashed #007bff;
+            border-radius: 10px;
+            padding: 30px;
+            text-align: center;
+            cursor: pointer;
+            transition: 0.3s;
+        }
+        .upload-area.dragover {
+            background-color: #e3f2fd;
+        }
+        .file-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: white;
+            padding: 10px;
+            border-radius: 5px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            margin-bottom: 5px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container mt-5">
+        <h2 class="text-center">Upload & Manage Files on S3</h2>
+
+        <!-- Drag & Drop Upload -->
+        <div id="upload-area" class="upload-area">
+            <p>Drag & drop files here or click to select</p>
+            <input type="file" id="file-input" multiple hidden>
+        </div>
+
+        <!-- Selected Files List -->
+        <ul id="file-list" class="list-group mt-3"></ul>
+
+        <!-- Upload Button -->
+        <button id="upload-btn" class="btn btn-primary mt-3" disabled>Upload Files</button>
+
+        <hr>
+
+        <!-- Uploaded Files Section -->
+        <h4 class="mt-4">Uploaded Files</h4>
+        <ul id="uploaded-files" class="list-group"></ul>
+    </div>
+
+    <script>
+        const uploadArea = document.getElementById("upload-area");
+        const fileInput = document.getElementById("file-input");
+        const fileList = document.getElementById("file-list");
+        const uploadedFilesList = document.getElementById("uploaded-files");
+        const uploadBtn = document.getElementById("upload-btn");
+        let selectedFiles = [];
+
+        // Drag & Drop
+        uploadArea.addEventListener("dragover", (e) => {
+            e.preventDefault();
+            uploadArea.classList.add("dragover");
+        });
+
+        uploadArea.addEventListener("dragleave", () => {
+            uploadArea.classList.remove("dragover");
+        });
+
+        uploadArea.addEventListener("drop", (e) => {
+            e.preventDefault();
+            uploadArea.classList.remove("dragover");
+            handleFiles(Array.from(e.dataTransfer.files));
+        });
+
+        uploadArea.addEventListener("click", () => fileInput.click());
+        fileInput.addEventListener("change", () => handleFiles(Array.from(fileInput.files)));
+
+        function handleFiles(files) {
+            selectedFiles = files;
+            fileList.innerHTML = "";
+
+            if (files.length > 0) {
+                uploadBtn.disabled = false;
+            } else {
+                uploadBtn.disabled = true;
+            }
+
+            files.forEach((file) => {
+                const listItem = document.createElement("li");
+                listItem.className = "list-group-item d-flex justify-content-between align-items-center";
+                listItem.innerHTML = `${file.name} <span class="badge bg-primary">${(file.size / 1024).toFixed(2)} KB</span>`;
+                fileList.appendChild(listItem);
+            });
+        }
+
+        // Upload Files to S3
+        uploadBtn.addEventListener("click", async () => {
+            if (selectedFiles.length === 0) return;
+            uploadBtn.innerText = "Uploading...";
+            uploadBtn.disabled = true;
+
+            for (let file of selectedFiles) {
+                const formData = new FormData();
+                formData.append("file", file);
+
+                try {
+                    await axios.post("http://localhost:8080/s3/upload", formData, {
+                        headers: { "Content-Type": "multipart/form-data" },
+                    });
+                } catch (error) {
+                    alert("Upload failed: " + error.response.data);
+                    return;
+                }
+            }
+
+            uploadBtn.innerText = "Upload Files";
+            uploadBtn.disabled = false;
+            fileList.innerHTML = "";
+            selectedFiles = [];
+            fetchFiles();
+        });
+
+        // Fetch Uploaded Files
+        async function fetchFiles() {
+            uploadedFilesList.innerHTML = "<li class='list-group-item text-muted'>Loading...</li>";
+
+            try {
+                const response = await axios.get("http://localhost:8080/s3/files");
+                uploadedFilesList.innerHTML = "";
+
+                response.data.forEach(file => {
+                    const listItem = document.createElement("li");
+                    listItem.className = "list-group-item file-item";
+
+                    const fileName = document.createElement("span");
+                    fileName.innerText = file;
+
+                    const downloadBtn = document.createElement("button");
+                    downloadBtn.className = "btn btn-success btn-sm";
+                    downloadBtn.innerText = "Download";
+                    downloadBtn.onclick = async () => {
+                        const urlResponse = await axios.get(`http://localhost:8080/s3/download/${file}`);
+                        window.open(urlResponse.data, "_blank");
+                    };
+
+                    listItem.appendChild(fileName);
+                    listItem.appendChild(downloadBtn);
+                    uploadedFilesList.appendChild(listItem);
+                });
+            } catch (error) {
+                uploadedFilesList.innerHTML = "<li class='list-group-item text-danger'>Failed to load files.</li>";
+            }
+        }
+
+        // Load files on page load
+        fetchFiles();
+    </script>
+</body>
+</html>

@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>S3 File Upload & Download</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            padding: 20px;
+            background-color: #f4f4f4;
+            text-align: center;
+        }
+        h2 {
+            color: #333;
+        }
+        input, button {
+            padding: 10px;
+            margin: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+        button {
+            background-color: #28a745;
+            color: white;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #218838;
+        }
+        ul {
+            list-style-type: none;
+            padding: 0;
+        }
+        li {
+            background: white;
+            margin: 10px auto;
+            padding: 10px;
+            width: 50%;
+            border-radius: 5px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.1);
+        }
+    </style>
+</head>
+<body>
+    <h2>Upload File to S3</h2>
+    <input type="file" id="fileInput">
+    <button onclick="uploadFile()">Upload</button>
+    <p id="uploadStatus"></p>
+
+    <h2>List Files</h2>
+    <button onclick="listFiles()">Refresh File List</button>
+    <ul id="fileList"></ul>
+
+    <script>
+        // Upload File
+        async function uploadFile() {
+            const fileInput = document.getElementById('fileInput');
+            const file = fileInput.files[0];
+            if (!file) {
+                alert("Please select a file.");
+                return;
+            }
+
+            const formData = new FormData();
+            formData.append("file", file);
+
+            try {
+                let response = await fetch("http://localhost:8080/s3/upload", {
+                    method: "POST",
+                    body: formData
+                });
+                let result = await response.text();
+                document.getElementById("uploadStatus").innerText = result;
+                listFiles(); // Refresh file list
+            } catch (error) {
+                console.error("Error uploading file:", error);
+            }
+        }
+
+        // List Files
+        async function listFiles() {
+            try {
+                let response = await fetch("http://localhost:8080/s3/files");
+                let files = await response.json();
+
+                let fileList = document.getElementById("fileList");
+                fileList.innerHTML = ""; // Clear previous list
+
+                files.forEach(file => {
+                    let li = document.createElement("li");
+                    li.innerHTML = `${file} <button onclick="downloadFile('${file}')">Download</button>`;
+                    fileList.appendChild(li);
+                });
+            } catch (error) {
+                console.error("Error fetching files:", error);
+            }
+        }
+
+        // Download File
+        async function downloadFile(fileName) {
+            try {
+                let response = await fetch(`http://localhost:8080/s3/download/${fileName}`);
+                let presignedUrl = await response.text();
+                window.open(presignedUrl, "_blank");
+            } catch (error) {
+                console.error("Error downloading file:", error);
+            }
+        }
+
+        window.onload = listFiles;
+    </script>
+</body>
+</html>
