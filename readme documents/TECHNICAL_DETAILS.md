@@ -35,7 +35,7 @@ Create an S3 bucket and obtain the credentials:
 - Access Key & Secret Key
 
 ### 2. SMTP Email Setup
-To send emails, configure SMTP settings in `application.properties`:
+To send emails, configure SMTP settings in `Project\src\main\resources\application.properties`:
 
 ```properties
 # AWS S3 Configuration
