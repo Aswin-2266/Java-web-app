@@ -1,11 +1,14 @@
-package com.example.demo.controller;
+package com.example.s3filemanager.controller;
 
-import com.example.demo.service.S3Service;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
+import com.example.s3filemanager.service.S3Service;
+
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/s3")
@@ -18,9 +21,8 @@ public class S3Controller {
     }
 
     @PostMapping("/upload")
-    public ResponseEntity<String> uploadFile(@RequestParam("file") MultipartFile file) {
-        String key = s3Service.uploadFile(file);
-        return ResponseEntity.ok("File uploaded successfully: " + key);
+    public ResponseEntity<Map<String, String>> uploadFile(@RequestParam("file") MultipartFile file) {
+        return ResponseEntity.ok(s3Service.uploadFile(file));
     }
 
     @GetMapping("/files")
@@ -34,9 +36,10 @@ public class S3Controller {
     }
 
     @DeleteMapping("/delete/{key}")
-    public ResponseEntity<String> deleteFile(@PathVariable String key) {
+    public ResponseEntity<Map<String, String>> deleteFile(@PathVariable String key) {
         s3Service.deleteFile(key);
-        return ResponseEntity.ok("File deleted successfully: " + key);
+        Map<String, String> response = new HashMap<>();
+        response.put("message", "File deleted successfully: " + key);
+        return ResponseEntity.ok(response);
     }
-
 }

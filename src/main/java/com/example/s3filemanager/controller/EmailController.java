@@ -1,10 +1,13 @@
-package com.example.demo.controller;
+package com.example.s3filemanager.controller;
 
-import com.example.demo.service.EmailService;
-import com.example.demo.service.S3Service;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
+
+import com.example.s3filemanager.service.EmailService;
+import com.example.s3filemanager.service.S3Service;
+
+import java.util.Map;
 
 @RestController
 @RequestMapping("/email")
@@ -19,9 +22,8 @@ public class EmailController {
     }
 
     @PostMapping("/upload")
-    public ResponseEntity<String> uploadFileAndSendEmail(@RequestParam("file") MultipartFile file) {
-        String fileName = s3Service.uploadFile(file);
-        emailService.sendFileUploadSuccessEmail(file.getOriginalFilename());
-        return ResponseEntity.ok("File uploaded successfully and notification email sent.");
+    public ResponseEntity<Map<String, String>> uploadFileAndSendEmail(@RequestParam("file") MultipartFile file) {
+        Map<String, String> result = s3Service.uploadFile(file);
+        return ResponseEntity.ok(result);
     }
 }

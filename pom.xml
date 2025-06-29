@@ -9,10 +9,10 @@
 			<relativePath/> <!-- lookup parent from repository -->
 		</parent>
 		<groupId>com.example</groupId>
-		<artifactId>demo</artifactId>
+		<artifactId>s3filemanager</artifactId>
 		<version>0.0.1-SNAPSHOT</version>
-		<name>demo</name>
-		<description>Demo project for Spring Boot</description>
+		<name>s3filemanager</name>
+		<description>S3 File Manager</description>
 		<url/>
 		<licenses>
 			<license/>
