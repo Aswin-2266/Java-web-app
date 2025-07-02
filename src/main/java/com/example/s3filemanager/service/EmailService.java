@@ -42,23 +42,23 @@ public class EmailService {
             helper.setTo(recipientEmail);
             helper.setSubject("File Upload Successful");
     
-            
-            String emailBody = "<p>Your file <b>" + fileName + "</b> has been uploaded successfully.</p>"
-                    + "<p><a href=\"" + fileUrl + "\">Click here to download the file</a></p>"
-                    + "<p><small>This link will expire in 1 minutes.</small></p>";
+            String emailBody = "<p>Dear User,</p>"
+                             + "<p>Your file <b>" + fileName + "</b> has been successfully uploaded.</p>"
+                             + "<p>You can download it using the link below:</p>"
+                             + "<p><a href=\"" + fileUrl + "\">Download File: " + fileName + "</a></p>"
+                             + "<p><small>Please note: This link will expire in 1 minute for security purposes.</small></p>"
+                             + "<p>Regards,<br/> S3 File Manager Team</p>";
     
             helper.setText(emailBody, true);
     
             mailSender.send(message);
-            System.out.println("Email sent successfully with download link!");
+            System.out.println("Email sent successfully with download link for: " + fileName);
         } catch (MessagingException e) {
             System.err.println("Failed to send email: " + e.getMessage());
             throw new RuntimeException("Email sending failed: " + e.getMessage(), e);
         }
     }
     
-    
-
     private String generatePresignedUrl(String key) {
         GetObjectPresignRequest presignRequest = GetObjectPresignRequest.builder()
                 .signatureDuration(Duration.ofMinutes(1)) 
@@ -69,5 +69,4 @@ public class EmailService {
         
         return presignedRequest.url().toString();
     }
-    
 }
